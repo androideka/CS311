@@ -3,6 +3,7 @@ package cs311.hw7;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Scanner;
 import java.util.Stack;
 
@@ -12,7 +13,7 @@ import java.util.Stack;
 public class test {
     public static void main(String[] args) throws FileNotFoundException {
         CSGraph<String, String> graph = new CSGraph<String, String>(true);
-        File file = new File("/home/androideka/ames.txt");
+        File file = new File("/home/androideka/ames2.txt");
         Scanner fileScanner = new Scanner(file);
         fileScanner.next();
         int numVertices = fileScanner.nextInt();
@@ -60,7 +61,29 @@ public class test {
                 graph.addEdge("" + edgeSource, "" + edgeTarget, edgeData);
             }
         }
-        CSGraph ingredients = new CSGraph(true);
+        CSGraph<String, String> ingredients = new CSGraph(true);
+        ingredients.addVertex("0", "A");
+        ingredients.addVertex("1", "B");
+        ingredients.addVertex("2", "C");
+        ingredients.addVertex("3", "D");
+        ingredients.addVertex("4", "E");
+        ingredients.addVertex("5", "F");
+        ingredients.setNumberVertices(6);
+        ingredients.addEdge("0", "2", "1");
+        ingredients.addEdge("0", "5", "1");
+        ingredients.addEdge("1", "2", "1");
+        ingredients.addEdge("1", "3", "1");
+        ingredients.addEdge("2", "3", "1");
+        ingredients.addEdge("2", "4", "1");
+        ingredients.addEdge("5", "2", "1");
+        ingredients.addEdge("5", "4", "1");
+        LinkedList<String> topo = (LinkedList<String>)ingredients.topologicalSort();
+        ListIterator<String> li = topo.listIterator();
+        while(li.hasNext())
+        {
+            System.out.println(li.next());
+            li.remove();
+        }
         System.out.println(graph.getNumVertices());
         System.out.println(graph.getNumEdges());
         System.out.println(graph.getNeighbors("0"));
@@ -72,10 +95,5 @@ public class test {
         System.out.println(graph.getNumVertices());
         System.out.println(graph.getNeighbors("0"));
         System.out.println(graph.getVertices());
-        LinkedList<String> list = (LinkedList<String>)graph.topologicalSort();
-        while(list.listIterator().hasNext())
-        {
-            System.out.println(list.listIterator().next());
-        }
     }
 }

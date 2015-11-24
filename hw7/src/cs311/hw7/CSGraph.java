@@ -37,6 +37,8 @@ public class CSGraph<S,T> implements Graph<S,T>
         this.isDirected = isDirected;
     }
 
+
+
     /**
      * If this returns true, the graph is a directed
      * graph. If false, it is undirected.
@@ -110,7 +112,6 @@ public class CSGraph<S,T> implements Graph<S,T>
      */
     public void addEdge(String sourceLabel, String targetLabel, T edgeData)
     {
-        //System.out.println(sourceLabel + ", " + targetLabel + ", " + edgeData);
         EdgeData<T> edge = new EdgeData<T>(sourceLabel, targetLabel, edgeData, State.States.UNPROCESSED);
         edgeDataList.put(sourceLabel + "," + targetLabel, edge);
         int vertex = Integer.parseInt(sourceLabel);
@@ -205,30 +206,50 @@ public class CSGraph<S,T> implements Graph<S,T>
      */
     public List<String> topologicalSort()
     {
-        HashMap<String, VertexData<S>> components = vertexDataList;
+        HashMap<String, VertexData<S>> components = (HashMap)vertexDataList.clone();
         // TODO: Find cycles and return null, deal with disconnected graph...
         if(!isDirected())
         {
-            System.out.println("FUCK YOU");
+            System.out.println("Can't topological sort an undirected graph.");
             return null;
         }
         else
         {
-            LinkedList<String> topologicalSort = new LinkedList<String>();
-            System.out.println("Root: " + vertexDataList.keySet().toArray()[0]);
-            depthFirstSearch((String)vertexDataList.keySet().toArray()[0], components);
-            ListIterator<String> listIterator = dfs.listIterator();
-            while(listIterator.hasNext())
+            HashMap<String, VertexData<S>> copy = (HashMap)vertexDataList.clone();
+            ArrayList<LinkedList<String>> topologicalSort = new ArrayList<LinkedList<String>>();
+            while(!copy.isEmpty())
             {
-                topologicalSort.add(listIterator.next());
+                System.out.println("keys: " + copy.keySet().toString());
+                System.out.println("Root: " + copy.keySet().toArray()[0]);
+                depthFirstSearch((String)copy.keySet().toArray()[0], components);
+                ListIterator<String> listIterator = dfs.listIterator();
+                LinkedList<String> component = new LinkedList<String>();
+                while(listIterator.hasNext())
+                {
+                    System.out.println("WTF");
+                    String next = listIterator.next();
+                    copy.remove(next);
+                    component.add(next);
+                }
+                System.out.println("Component: " + component.toString());
+                topologicalSort.add(component);
+                dfs = new Stack<String>();
             }
-            return topologicalSort;
+            int i = 0;
+            LinkedList<String> master = new LinkedList<String>();
+            while(i < topologicalSort.size())
+            {
+                LinkedList<String> component = topologicalSort.get(i);
+                while(!component.isEmpty())
+                {
+                    String node = component.removeFirst();
+                    System.out.println("Adding node " + node);
+                    master.add(node);
+                }
+                i++;
+            }
+            return master;
         }
-    }
-
-    public List<String> findConnectedComponents()
-    {
-
     }
 
     /**
@@ -282,19 +303,25 @@ public class CSGraph<S,T> implements Graph<S,T>
     public void depthFirstSearch(String root, HashMap<String, VertexData<S>> nodes)
     {
         if(getNeighbors(root) == null)
+        {
+            System.out.println("No neighbors for node " + root);
+            dfs.push(root);
             return;
-        dfs.push(root);
-        nodes.get(root).setState(State.States.DISCOVERED);
+        }
 
         Stack<String> neighbors = (Stack<String>)getNeighbors(root);
-        System.out.println(neighbors);
+        System.out.println("Neighbors: " + neighbors);
         while(!neighbors.isEmpty())
         {
+            System.out.println("Picking neighbor " + nodes.get(neighbors.peek()).getVertexID());
+            System.out.println("Neighbor state = " + nodes.get(neighbors.peek()).getState());
             if(nodes.get(neighbors.peek()).getState() != State.States.DISCOVERED)
             {
                 System.out.println("Next neighbor: " + neighbors.peek());
+                nodes.get(neighbors.peek()).setState(State.States.DISCOVERED);
                 depthFirstSearch(neighbors.pop(), nodes);
             }
+            else return;
         }
     }
 
