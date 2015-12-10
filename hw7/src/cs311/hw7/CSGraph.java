@@ -308,22 +308,24 @@ public class CSGraph<S,T> implements Graph<S,T>
      */
     public Graph<S,T> minimumSpanningTree(EdgeMeasure<T> measure)
     {
-        // TODO: MST with Kruskal's
         System.out.println("HELLO");
         ArrayList<LinkedList<String>> forest = new ArrayList<LinkedList<String>>();
         CSGraph<S, T> mst = new CSGraph<S, T>(false);
         mst.setNumberVertices(this.getNumVertices());
-        Subset[] subsets = new Subset[100];
+        ArrayList<Subset> subsets = new ArrayList<Subset>();
         for(int i = 0; i < getNumVertices(); i++)
         {
-            parent[i] = -1;
+            Subset subset = new Subset();
+            subsets.add(subset);
+            subsets.get(i).parent = i;
+            subsets.get(i).rank = 0;
         }
         ListIterator li = orderedEdges.listIterator();
         while(li.hasNext())
         {
             EdgeData edge = (EdgeData)li.next();
-            int x = mst.find(parent, Integer.parseInt(edge.getSourceLabel()));
-            int y = mst.find(parent, Integer.parseInt(edge.getTargetLabel()));
+            int x = mst.find(subsets, Integer.parseInt(edge.getSourceLabel()));
+            int y = mst.find(subsets, Integer.parseInt(edge.getTargetLabel()));
 
             if(x == y)
             {
@@ -331,14 +333,15 @@ public class CSGraph<S,T> implements Graph<S,T>
             }
             else
             {
-                mst.Union(parent, x, y);
+                mst.Union(subsets, x, y);
                 mst.addEdge(edge.getSourceLabel(), edge.getTargetLabel(), (T)edge.getData());
             }
         }
         System.out.println(mst.getNumEdges());
-        return null;
+        return mst;
     }
 
+    /// MST helper
     public class Subset
     {
         int parent;
@@ -349,21 +352,35 @@ public class CSGraph<S,T> implements Graph<S,T>
         }
     }
 
-    public int find(int parent[], int i)
+    /// MST helper
+    public int find(ArrayList<Subset> subsets, int i)
     {
-        if(parent[i] == -1)
+        if(subsets.get(i).parent != i)
         {
-            return i;
+            subsets.get(i).parent = find(subsets, subsets.get(i).parent);
         }
-        return find(parent, parent[i]);
+        return subsets.get(i).parent;
     }
 
-
-    public void Union(int parent[], int x, int y)
+    /// MST helper
+    public void Union(ArrayList<Subset> subsets, int x, int y)
     {
-        int xSet = find(parent, x);
-        int ySet = find(parent, y);
-        parent[xSet] = ySet;
+        int xRoot = find(subsets, x);
+        int yRoot = find(subsets, y);
+
+        if(subsets.get(xRoot).rank < subsets.get(yRoot).rank)
+        {
+            subsets.get(xRoot).parent = yRoot;
+        }
+        else if(subsets.get(xRoot).rank > subsets.get(yRoot).rank)
+        {
+            subsets.get(yRoot).parent = xRoot;
+        }
+        else
+        {
+            subsets.get(yRoot).parent = xRoot;
+            subsets.get(xRoot).rank++;
+        }
     }
 
     /**

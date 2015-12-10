@@ -18,7 +18,7 @@ public class VertexData<S>
         this.state = state;
     }
 
-    public String getVertexID()
+    public String toString()
     {
         return vertexID;
     }
