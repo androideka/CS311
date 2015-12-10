@@ -93,12 +93,24 @@ public class CSCoffeeTask implements CoffeeTask {
      */
     public List<Integer> getShortestRoute(File amesFile, List<Integer> orderingList)
     {
+        parseFile(amesFile, false);
         orderingList.add(0, 1067);
         orderingList.add(orderingList.size(), 826);
         ListIterator li = orderingList.listIterator();
+        List<Integer> shortestRoute = new ArrayList<Integer>();
         System.out.println(orderingList.toString());
-        /// TODO
-        return null;
+        String node = "" + li.next();
+        System.out.println(graph.getNumVertices());
+        System.out.println(graph.shortestPath("0", "1", measure));
+        while(li.hasNext())
+        {
+            String next = "" + li.next();
+            shortestRoute.addAll(graph.shortestPath(node, next, measure));
+            node = next;
+            li.remove();
+        }
+        System.out.println(shortestRoute.toString());
+        return shortestRoute;
     }
 
     /**
@@ -121,8 +133,8 @@ public class CSCoffeeTask implements CoffeeTask {
         {
             total += Double.parseDouble((String)edge.getData());
         }
-        System.out.println(total);
-        return total;
+        System.out.println(total / 2 );
+        return total / 2;
     }
 
     public void parseFile(File amesFile, boolean directed)

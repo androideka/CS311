@@ -295,7 +295,58 @@ public class CSGraph<S,T> implements Graph<S,T>
     public List<String> shortestPath(String startLabel, String destLabel, EdgeMeasure<T> measure)
     {
         // TODO: Dijkstra's
-        return null;
+        ArrayList<String> open = new ArrayList<String>();
+        List<String> closed = new ArrayList<String>();
+        open.add(startLabel);
+        final double[] dist = new double[this.getNumVertices()];
+        String[] pred = new String[this.getNumVertices()];
+        for(int i = 0; i < getNumVertices(); i++)
+        {
+            dist[i] = Double.POSITIVE_INFINITY;
+            pred[i] = "";
+        }
+        dist[Integer.parseInt(startLabel)] = 0;
+        while(!open.isEmpty())
+        {
+            Arrays.sort(dist);
+            open.sort(new Comparator<String>() {
+                @Override
+                public int compare(String o1, String o2) {
+                    double dist1 = dist[Integer.parseInt(o1)];
+                    double dist2 = dist[Integer.parseInt(o2)];
+                    if(dist1 - dist2 > 0)
+                    {
+                        return 1;
+                    }
+                    if(dist1 - dist2 < 0)
+                    {
+                        return -1;
+                    }
+                    else
+                    {
+                        return 0;
+                    }
+                }
+            });
+            String a = open.get(0);
+            closed.add(a);
+            open.remove(a);
+            for(String neighbor : getNeighbors(a))
+            {
+                if(!closed.contains(neighbor))
+                {
+                    double alt = dist[Integer.parseInt(a)] +
+                            Double.parseDouble(edgeDataList.get(a + "," + neighbor).getData().toString());
+                    if(alt < dist[Integer.parseInt(neighbor)])
+                    {
+                        open.add(neighbor);
+                        dist[Integer.parseInt(neighbor)] = alt;
+                        pred[Integer.parseInt(neighbor)] = a;
+                    }
+                }
+            }
+        }
+        return closed;
     }
 
     /**

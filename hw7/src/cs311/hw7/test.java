@@ -10,10 +10,10 @@ import java.util.*;
 public class test {
     public static void main(String[] args) throws FileNotFoundException {
         CSCoffeeTask task = new CSCoffeeTask();
-        CSGraph<String, String> graph = new CSGraph<String, String>(true);
         File file = new File("/home/androideka/ames2.txt");
         List<Integer> topo = task.getSortedIngredientLocations();
         task.getMSTCost(file);
+        task = new CSCoffeeTask();
         task.getShortestRoute(file, topo);
     }
 }
