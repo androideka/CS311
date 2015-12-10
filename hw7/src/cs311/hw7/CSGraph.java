@@ -1,6 +1,8 @@
 package cs311.hw7;
 
-import java.nio.channels.Pipe;
+import com.sun.javafx.geom.Edge;
+import com.sun.xml.internal.bind.v2.runtime.output.SAXOutput;
+
 import java.util.*;
 
 /**
@@ -20,12 +22,32 @@ public class CSGraph<S,T> implements Graph<S,T>
     private boolean isDirected;
     private int edgeCount, vertexCount;
 
-    private ArrayList<String>[] neighbors;
+    private int processed = 0;
+
+    private HashMap<String, ArrayList<String>> neighbors;
 
     private HashMap<String, VertexData<S>> vertexDataList = new HashMap<String, VertexData<S>>();
-    private HashMap<String, EdgeData<T>> edgeDataList = new HashMap<String, EdgeData<T>>();
+    public HashMap<String, EdgeData<T>> edgeDataList = new HashMap<String, EdgeData<T>>();
+
+    private LinkedList<EdgeData> orderedEdges = new LinkedList<EdgeData>();
 
     private Stack<String> dfs = new Stack<String>();
+
+    Comparator<EdgeData> comparator = new Comparator<EdgeData>() {
+        @Override
+        public int compare(EdgeData o1, EdgeData o2) {
+            double diff = Double.parseDouble((String)o1.getData()) - Double.parseDouble((String)o2.getData());
+            if(diff > 0)
+            {
+                return 1;
+            }
+            if(diff < 0)
+            {
+                return -1;
+            }
+            return 0;
+        }
+    };
 
     public CSGraph()
     {
@@ -36,7 +58,6 @@ public class CSGraph<S,T> implements Graph<S,T>
     {
         this.isDirected = isDirected;
     }
-
 
 
     /**
@@ -71,25 +92,26 @@ public class CSGraph<S,T> implements Graph<S,T>
      */
     public void removeVertex(String vertexLabel)
     {
-        // TODO: Remove edges to this vertex!!!!!
         vertexDataList.remove(vertexLabel);
-        int vertex = Integer.parseInt(vertexLabel);
-        ArrayList<String> vertexNeighbors = neighbors[vertex];
+        ArrayList<String> vertexNeighbors = neighbors.get(vertexLabel);
         for(int i = 1; i < vertexNeighbors.size(); i++)
         {
-            neighbors[Integer.parseInt(vertexNeighbors.get(i))].remove(vertexLabel);
+            neighbors.get(vertexNeighbors.get(i)).remove(vertexLabel);
         }
-        Stack<String> edges = (Stack)edgeDataList.keySet();
-        String edge = edges.pop();
-        while(edge != null)
+        Set edges = edgeDataList.keySet();
+        Stack<String> edgeStack = new Stack<String>();
+        edgeStack.addAll(edges);
+        String edge;
+        while(!edgeStack.isEmpty())
         {
+            edge = edgeStack.pop();
             if(edge.contains(vertexLabel))
             {
                 edgeDataList.remove(edge);
             }
-            edge = edges.pop();
         }
         vertexNeighbors.clear();
+
         vertexCount--;
     }
 
@@ -114,8 +136,7 @@ public class CSGraph<S,T> implements Graph<S,T>
     {
         EdgeData<T> edge = new EdgeData<T>(sourceLabel, targetLabel, edgeData, State.States.UNPROCESSED);
         edgeDataList.put(sourceLabel + "," + targetLabel, edge);
-        int vertex = Integer.parseInt(sourceLabel);
-        ArrayList<String> vertexNeighbors = neighbors[vertex];
+        ArrayList<String> vertexNeighbors = neighbors.get(sourceLabel);
         if(!vertexNeighbors.contains(targetLabel))
         {
             vertexNeighbors.add(targetLabel);
@@ -124,14 +145,15 @@ public class CSGraph<S,T> implements Graph<S,T>
         {
             EdgeData<T> returnEdge = new EdgeData<T>(targetLabel, sourceLabel, edgeData, State.States.UNPROCESSED);
             edgeDataList.put(targetLabel + "," + sourceLabel, returnEdge);
-            vertex = Integer.parseInt(targetLabel);
-            vertexNeighbors = neighbors[vertex];
+            vertexNeighbors = neighbors.get(targetLabel);
             if(!vertexNeighbors.contains(sourceLabel))
             {
                 vertexNeighbors.add(sourceLabel);
             }
             edgeCount++;
         }
+        orderedEdges.add(edge);
+        orderedEdges.sort(comparator);
         edgeCount++;
     }
 
@@ -189,8 +211,7 @@ public class CSGraph<S,T> implements Graph<S,T>
      */
     public Collection<String> getNeighbors(String label)
     {
-        int vertex = Integer.parseInt(label);
-        ArrayList<String> vertexNeighbors = neighbors[vertex];
+        ArrayList<String> vertexNeighbors = neighbors.get(label);
         ListIterator<String> li = vertexNeighbors.listIterator();
         Collection<String> neighborCollection = new Stack<String>();
         while(li.hasNext())
@@ -206,8 +227,7 @@ public class CSGraph<S,T> implements Graph<S,T>
      */
     public List<String> topologicalSort()
     {
-        HashMap<String, VertexData<S>> components = (HashMap)vertexDataList.clone();
-        // TODO: Find cycles and return null, deal with disconnected graph...
+        // TODO: Find cycles
         if(!isDirected())
         {
             System.out.println("Can't topological sort an undirected graph.");
@@ -215,38 +235,44 @@ public class CSGraph<S,T> implements Graph<S,T>
         }
         else
         {
-            HashMap<String, VertexData<S>> copy = (HashMap)vertexDataList.clone();
             ArrayList<LinkedList<String>> topologicalSort = new ArrayList<LinkedList<String>>();
-            while(!copy.isEmpty())
+            while(processed < vertexCount)
             {
-                System.out.println("keys: " + copy.keySet().toString());
-                System.out.println("Root: " + copy.keySet().toArray()[0]);
-                depthFirstSearch((String)copy.keySet().toArray()[0], components);
+                for(int i = 0; i < vertexDataList.size(); i++)
+                {
+                    if(vertexDataList
+                            .get(vertexDataList.keySet().toArray()[i])
+                            .getState() == State.States.UNDISCOVERED)
+                    {
+                        depthFirstSearch((String)vertexDataList.keySet().toArray()[i]);
+                    }
+                }
                 ListIterator<String> listIterator = dfs.listIterator();
                 LinkedList<String> component = new LinkedList<String>();
                 while(listIterator.hasNext())
                 {
-                    System.out.println("WTF");
                     String next = listIterator.next();
-                    copy.remove(next);
                     component.add(next);
                 }
-                System.out.println("Component: " + component.toString());
                 topologicalSort.add(component);
                 dfs = new Stack<String>();
             }
             int i = 0;
-            LinkedList<String> master = new LinkedList<String>();
+            Stack<String> sort = new Stack<String>();
             while(i < topologicalSort.size())
             {
                 LinkedList<String> component = topologicalSort.get(i);
                 while(!component.isEmpty())
                 {
-                    String node = component.removeFirst();
-                    System.out.println("Adding node " + node);
-                    master.add(node);
+                    String node = component.pop();
+                    sort.push(node);
                 }
                 i++;
+            }
+            LinkedList<String> master = new LinkedList<String>();
+            while(!sort.isEmpty())
+            {
+                master.add(sort.pop());
             }
             return master;
         }
@@ -268,7 +294,7 @@ public class CSGraph<S,T> implements Graph<S,T>
      */
     public List<String> shortestPath(String startLabel, String destLabel, EdgeMeasure<T> measure)
     {
-        // TODO
+        // TODO: Dijkstra's
         return null;
     }
 
@@ -282,8 +308,62 @@ public class CSGraph<S,T> implements Graph<S,T>
      */
     public Graph<S,T> minimumSpanningTree(EdgeMeasure<T> measure)
     {
-        // TODO
+        // TODO: MST with Kruskal's
+        System.out.println("HELLO");
+        ArrayList<LinkedList<String>> forest = new ArrayList<LinkedList<String>>();
+        CSGraph<S, T> mst = new CSGraph<S, T>(false);
+        mst.setNumberVertices(this.getNumVertices());
+        Subset[] subsets = new Subset[100];
+        for(int i = 0; i < getNumVertices(); i++)
+        {
+            parent[i] = -1;
+        }
+        ListIterator li = orderedEdges.listIterator();
+        while(li.hasNext())
+        {
+            EdgeData edge = (EdgeData)li.next();
+            int x = mst.find(parent, Integer.parseInt(edge.getSourceLabel()));
+            int y = mst.find(parent, Integer.parseInt(edge.getTargetLabel()));
+
+            if(x == y)
+            {
+                li.remove();
+            }
+            else
+            {
+                mst.Union(parent, x, y);
+                mst.addEdge(edge.getSourceLabel(), edge.getTargetLabel(), (T)edge.getData());
+            }
+        }
+        System.out.println(mst.getNumEdges());
         return null;
+    }
+
+    public class Subset
+    {
+        int parent;
+        int rank;
+        public Subset()
+        {
+
+        }
+    }
+
+    public int find(int parent[], int i)
+    {
+        if(parent[i] == -1)
+        {
+            return i;
+        }
+        return find(parent, parent[i]);
+    }
+
+
+    public void Union(int parent[], int x, int y)
+    {
+        int xSet = find(parent, x);
+        int ySet = find(parent, y);
+        parent[xSet] = ySet;
     }
 
     /**
@@ -300,28 +380,27 @@ public class CSGraph<S,T> implements Graph<S,T>
         return 0.0;
     }
 
-    public void depthFirstSearch(String root, HashMap<String, VertexData<S>> nodes)
+    public void depthFirstSearch(String root)
     {
-        if(getNeighbors(root) == null)
+        if(!hasUndiscoveredNeighbors(root))
         {
-            System.out.println("No neighbors for node " + root);
+            vertexDataList.get(root).setState(State.States.PROCESSED);
+            processed++;
             dfs.push(root);
             return;
         }
 
-        Stack<String> neighbors = (Stack<String>)getNeighbors(root);
-        System.out.println("Neighbors: " + neighbors);
+        Stack<String> neighbors = (Stack)getNeighbors(root);
         while(!neighbors.isEmpty())
         {
-            System.out.println("Picking neighbor " + nodes.get(neighbors.peek()).getVertexID());
-            System.out.println("Neighbor state = " + nodes.get(neighbors.peek()).getState());
-            if(nodes.get(neighbors.peek()).getState() != State.States.DISCOVERED)
+            if(vertexDataList.get(neighbors.peek()).getState() == State.States.PROCESSED)
             {
-                System.out.println("Next neighbor: " + neighbors.peek());
-                nodes.get(neighbors.peek()).setState(State.States.DISCOVERED);
-                depthFirstSearch(neighbors.pop(), nodes);
+                neighbors.pop();
             }
-            else return;
+            else
+            {
+                depthFirstSearch(neighbors.pop());
+            }
         }
     }
 
@@ -332,10 +411,43 @@ public class CSGraph<S,T> implements Graph<S,T>
 
     public void setNumberVertices(int numberVertices)
     {
-        neighbors = new ArrayList[numberVertices];
+        neighbors = new HashMap<String, ArrayList<String>>();
         for(int i = 0; i < numberVertices; i++)
         {
-            neighbors[i] = new ArrayList<String>();
+            neighbors.put("" + i, new ArrayList<String>());
+        }
+    }
+
+    public boolean hasUndiscoveredNeighbors(String node)
+    {
+        Stack<String> neighbors = (Stack)getNeighbors(node);
+        if(neighbors.isEmpty())
+        {
+            return false;
+        }
+
+        while(!neighbors.isEmpty())
+        {
+            String neighbor = neighbors.pop();
+            if(vertexDataList.get(neighbor).getState() == State.States.UNDISCOVERED)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public CSEdgeMeasure measure;
+
+    public class CSEdgeMeasure implements EdgeMeasure<T>
+    {
+        public CSEdgeMeasure()
+        {
+
+        }
+        public double getCost(T edgeData) {
+            System.out.println(edgeData.toString());
+            return 0.0;
         }
     }
 }

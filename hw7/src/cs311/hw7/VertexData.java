@@ -9,6 +9,7 @@ public class VertexData<S>
     private String parent;
     private S data;
     private State.States state;
+    private int component;
 
     public VertexData(String vertexID, S data, State.States state)
     {
@@ -32,6 +33,11 @@ public class VertexData<S>
         return state;
     }
 
+    public int getComponent()
+    {
+        return component;
+    }
+
     public void setState(State.States state)
     {
         this.state = state;
@@ -40,5 +46,10 @@ public class VertexData<S>
     public void setParent(String parent)
     {
         this.parent = parent;
+    }
+
+    public void setComponent(int component)
+    {
+        this.component = component;
     }
 }

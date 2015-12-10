@@ -1,17 +1,52 @@
 package cs311.hw7;
 
 import java.io.File;
-import java.util.List;
-import java.util.Stack;
+import java.io.FileNotFoundException;
+import java.util.*;
 
 /**
  * Created by androideka on 11/9/15.
  */
 public class CSCoffeeTask implements CoffeeTask {
 
+    private CSGraph<String, String> ingredients = new CSGraph<String, String>(true);
+    private CSGraph<String, String> graph = new CSGraph<String, String>();
+
+    private HashMap<String, ArrayList<String>> forest = new HashMap<String, ArrayList<String>>();
+
+    private CSGraph.CSEdgeMeasure measure;
+
     public CSCoffeeTask()
     {
-
+        //ingredients.addVertex("981", "A");
+        ingredients.addVertex("0", "981");
+        //ingredients.addVertex("1653", "B");
+        ingredients.addVertex("1", "1653");
+        //ingredients.addVertex("524", "C");
+        ingredients.addVertex("2", "524");
+        //ingredients.addVertex("1864", "D");
+        ingredients.addVertex("3", "1864");
+        //ingredients.addVertex("1119", "E");
+        ingredients.addVertex("4", "1119");
+        //ingredients.addVertex("1104", "F");
+        ingredients.addVertex("5", "1104");
+        ingredients.setNumberVertices(6);
+        //ingredients.addEdge("981", "524", "1");
+        ingredients.addEdge("0", "2", "1");
+        //ingredients.addEdge("981", "1104", "1");
+        ingredients.addEdge("0", "5", "1");
+        //ingredients.addEdge("1653", "524", "1");
+        ingredients.addEdge("1", "2", "1");
+        //ingredients.addEdge("1653", "1864", "1");
+        ingredients.addEdge("1", "3", "1");
+        //ingredients.addEdge("524", "1864", "1");
+        ingredients.addEdge("2", "3", "1");
+        //ingredients.addEdge("524", "1119", "1");
+        ingredients.addEdge("2", "4", "1");
+        //ingredients.addEdge("1104", "524", "1");
+        ingredients.addEdge("5", "2", "1");
+        //ingredients.addEdge("1104", "1119", "1");
+        ingredients.addEdge("5", "4", "1");
     }
 
     /**
@@ -24,9 +59,7 @@ public class CSCoffeeTask implements CoffeeTask {
      */
     public List<Integer> getSortedIngredientLocations()
     {
-
-
-        return null;
+        return (LinkedList)ingredients.topologicalSort();
     }
 
     /**
@@ -45,6 +78,7 @@ public class CSCoffeeTask implements CoffeeTask {
      */
     public List<Integer> getShortestRoute(File amesFile, List<Integer> orderingList)
     {
+
         return null;
     }
 
@@ -60,6 +94,55 @@ public class CSCoffeeTask implements CoffeeTask {
      */
     public double getMSTCost(File amesFile)
     {
+        try {
+            parseFile(amesFile, false);
+            graph.minimumSpanningTree(measure);
+            for(int i = 0; i < graph.getNumVertices(); i++)
+            {
+
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         return 0.0;
+    }
+
+    public void parseFile(File amesFile, boolean directed) throws FileNotFoundException {
+        graph = new CSGraph<String, String>(directed);
+        Scanner fileScanner = new Scanner(amesFile);
+        fileScanner.next();
+        int numVertices = fileScanner.nextInt();
+        int vertexID, edgeSource, edgeTarget;
+        String vertexData, newLine, next, edgeData;
+        graph.setNumberVertices(numVertices);
+        boolean vertices = true;
+        fileScanner.nextLine();
+        while(fileScanner.hasNextLine())
+        {
+            newLine = fileScanner.nextLine();
+            Scanner scanner = new Scanner(newLine);
+            scanner.useDelimiter(",|:");
+            next = scanner.next();
+            if(next.equals("EDGES"))
+            {
+                vertices = false;
+            }
+            else if(vertices)
+            {
+                vertexData = "";
+                vertexID = Integer.parseInt(next);
+                vertexData += scanner.next() + ",";
+                vertexData += scanner.next();
+                graph.addVertex("" + vertexID, vertexData);
+            }
+            else
+            {
+                edgeSource = Integer.parseInt(next);
+                edgeTarget = Integer.parseInt(scanner.next());
+                edgeData = scanner.next();
+
+                graph.addEdge("" + edgeSource, "" + edgeTarget, edgeData);
+            }
+        }
     }
 }
