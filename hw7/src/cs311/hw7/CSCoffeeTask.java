@@ -98,18 +98,21 @@ public class CSCoffeeTask implements CoffeeTask {
         orderingList.add(orderingList.size(), 826);
         ListIterator li = orderingList.listIterator();
         List<Integer> shortestRoute = new ArrayList<Integer>();
-        System.out.println(orderingList.toString());
+        System.out.println("ORDER: " + orderingList.toString());
         String node = "" + li.next();
         System.out.println(graph.getNumVertices());
-        System.out.println(graph.shortestPath("0", "1", measure));
+        System.out.println(graph.getNumEdges());
         while(li.hasNext())
         {
             String next = "" + li.next();
+            System.out.println("FINDING " + next + " FROM " + node);
             shortestRoute.addAll(graph.shortestPath(node, next, measure));
             node = next;
             li.remove();
         }
+        shortestRoute.add(826);
         System.out.println(shortestRoute.toString());
+        System.out.println(shortestRoute.size());
         return shortestRoute;
     }
 

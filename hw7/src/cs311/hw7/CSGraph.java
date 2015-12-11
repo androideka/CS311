@@ -218,6 +218,17 @@ public class CSGraph<S,T> implements Graph<S,T>
         {
             neighborCollection.add(li.next());
         }
+        ArrayList<EdgeData> edges = new ArrayList<EdgeData>();
+        edges.addAll(edgeDataList.values());
+        if(!isDirected()){
+            for(EdgeData edge : edges)
+            {
+                if(edge.getTargetLabel().equals(label) && !neighborCollection.contains(edge.getSourceLabel()))
+                {
+                    neighborCollection.add(edge.getSourceLabel());
+                }
+            }
+        }
         return neighborCollection;
     }
 
@@ -296,7 +307,7 @@ public class CSGraph<S,T> implements Graph<S,T>
     {
         // TODO: Dijkstra's
         ArrayList<String> open = new ArrayList<String>();
-        List<String> closed = new ArrayList<String>();
+        ArrayList<String> closed = new ArrayList<String>();
         open.add(startLabel);
         final double[] dist = new double[this.getNumVertices()];
         String[] pred = new String[this.getNumVertices()];
@@ -308,7 +319,41 @@ public class CSGraph<S,T> implements Graph<S,T>
         dist[Integer.parseInt(startLabel)] = 0;
         while(!open.isEmpty())
         {
-            Arrays.sort(dist);
+            String a = open.get(0);
+            //System.out.println("Adding " + a + " to closed");
+            closed.add(a);
+            //System.out.println("Closed: " + closed.toString());
+            open.remove(a);
+            for(String neighbor : getNeighbors(a))
+            {
+                //System.out.println(a + " neighbors: " + getNeighbors(a).toString());
+                //System.out.println(neighbor);
+                if(neighbor.equals(destLabel) || a.equals(destLabel))
+                {
+                    System.out.println("CLOSED: " + closed.toString());
+                    return closed;
+                }
+                if(!closed.contains(neighbor))
+                {
+                    double distance = 0.0;
+                    if(edgeDataList.get(a + "," + neighbor) == null)
+                    {
+                        distance = Double.parseDouble(edgeDataList.get(neighbor + "," + a).getData().toString());
+                    }
+                    else
+                    {
+                        distance = Double.parseDouble(edgeDataList.get(a + "," + neighbor).getData().toString());
+                    }
+                    double alt = dist[Integer.parseInt(a)] + distance;
+                    if(alt < dist[Integer.parseInt(neighbor)] && !open.contains(neighbor)
+                            && !pred[Integer.parseInt(neighbor)].equals(a))
+                    {
+                        open.add(neighbor);
+                        dist[Integer.parseInt(neighbor)] = alt;
+                        pred[Integer.parseInt(neighbor)] = a;
+                    }
+                }
+            }
             open.sort(new Comparator<String>() {
                 @Override
                 public int compare(String o1, String o2) {
@@ -328,23 +373,6 @@ public class CSGraph<S,T> implements Graph<S,T>
                     }
                 }
             });
-            String a = open.get(0);
-            closed.add(a);
-            open.remove(a);
-            for(String neighbor : getNeighbors(a))
-            {
-                if(!closed.contains(neighbor))
-                {
-                    double alt = dist[Integer.parseInt(a)] +
-                            Double.parseDouble(edgeDataList.get(a + "," + neighbor).getData().toString());
-                    if(alt < dist[Integer.parseInt(neighbor)])
-                    {
-                        open.add(neighbor);
-                        dist[Integer.parseInt(neighbor)] = alt;
-                        pred[Integer.parseInt(neighbor)] = a;
-                    }
-                }
-            }
         }
         return closed;
     }

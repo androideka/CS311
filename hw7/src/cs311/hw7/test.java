@@ -12,8 +12,8 @@ public class test {
         CSCoffeeTask task = new CSCoffeeTask();
         File file = new File("/home/androideka/ames2.txt");
         List<Integer> topo = task.getSortedIngredientLocations();
-        task.getMSTCost(file);
-        task = new CSCoffeeTask();
+        System.out.println("TOPOLOGICAL SORT: " + topo);
+        //task.getMSTCost(file);
         task.getShortestRoute(file, topo);
     }
 }
