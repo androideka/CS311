@@ -305,7 +305,6 @@ public class CSGraph<S,T> implements Graph<S,T>
      */
     public List<String> shortestPath(String startLabel, String destLabel, EdgeMeasure<T> measure)
     {
-        // TODO: Dijkstra's
         ArrayList<String> open = new ArrayList<String>();
         ArrayList<String> closed = new ArrayList<String>();
         open.add(startLabel);
@@ -320,22 +319,13 @@ public class CSGraph<S,T> implements Graph<S,T>
         while(!open.isEmpty())
         {
             String a = open.get(0);
-            //System.out.println("Adding " + a + " to closed");
             closed.add(a);
-            //System.out.println("Closed: " + closed.toString());
             open.remove(a);
             for(String neighbor : getNeighbors(a))
             {
-                //System.out.println(a + " neighbors: " + getNeighbors(a).toString());
-                //System.out.println(neighbor);
-                if(neighbor.equals(destLabel) || a.equals(destLabel))
-                {
-                    System.out.println("CLOSED: " + closed.toString());
-                    return closed;
-                }
                 if(!closed.contains(neighbor))
                 {
-                    double distance = 0.0;
+                    double distance;
                     if(edgeDataList.get(a + "," + neighbor) == null)
                     {
                         distance = Double.parseDouble(edgeDataList.get(neighbor + "," + a).getData().toString());
@@ -374,7 +364,27 @@ public class CSGraph<S,T> implements Graph<S,T>
                 }
             });
         }
-        return closed;
+        Stack<String> stack = new Stack<String>();
+        String current = destLabel;
+        while(true)
+        {
+            String pre = pred[Integer.parseInt(current)];
+            stack.push(pre);
+            current = pre;
+            if(pre.equals(startLabel))
+            {
+                break;
+            }
+        }
+        ArrayList<String> master = new ArrayList<String>();
+        while(!stack.isEmpty())
+        {
+            if(!master.contains(stack.peek()))
+            {
+                master.add(stack.pop());
+            }
+        }
+        return master;
     }
 
     /**
